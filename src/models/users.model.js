@@ -35,10 +35,12 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Passward is required"],
     },
-    watchHistory: {
+    watchHistory: [
+      {
       type: Schema.Types.ObjectId,
       ref: "Video",
-    },
+      }
+   ],
     avatar: {
       type: String, // cloudenary URL string aayegi
       required: true,

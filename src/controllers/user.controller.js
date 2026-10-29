@@ -22,9 +22,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
   // Check user already exist or not
-  const isUserExist = User.findOne({
-    $or: [{username}, {email}]
-  })
+  const isUserExist = await User.findOne(
+    { $or: [ { username }, { email } ] }
+  )
+
+  
+
   if(isUserExist){
     throw new AppError("User with email or username already exist", 409)
   }
@@ -32,7 +35,13 @@ const registerUser = asyncHandler(async (req, res) => {
   //   Check images and avtar
   const avtaarLocalPath = req.files?.avatar[0]?.path;
 
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+  let coverImageLocalPath;
+  if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
+
 
   if(!avtaarLocalPath){
     throw new AppError("Avtar is required", 400)
