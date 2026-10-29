@@ -46,7 +46,9 @@ const userSchema = new Schema(
     coverImage: {
       type: String,
     },
-    refereshToken: {},
+    refereshToken: {
+      type : String
+    },
   },
   { timestamps: true }
 );
