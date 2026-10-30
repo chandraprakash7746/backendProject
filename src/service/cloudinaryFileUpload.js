@@ -41,6 +41,7 @@ import fs from "fs";
 
         console.log("File is uploded on cloudinary")
         console.log("response url = ",response.url)
+        fs.unlinkSync(localFilePath)
         return response;
 
       } catch (error) {

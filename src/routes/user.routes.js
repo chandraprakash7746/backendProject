@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/user.controller.js";
+import { login, registerUser } from "../controllers/user.controller.js";
 import { upload } from "../middleware/multer.middleware.js";
 
 const userRouter = Router();
@@ -19,4 +19,6 @@ userRouter.route("/register").post(
 
 // above line ko me kuch is trhe se bhi likh skta hun
 // userRouter.post("/register", signup) as good as userRouter.route("/register").post(registerUser);
+
+userRouter.route("/login").post(login)
 export default userRouter;

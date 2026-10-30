@@ -48,7 +48,7 @@ const userSchema = new Schema(
     coverImage: {
       type: String,
     },
-    refereshToken: {
+    refreshToken: {
       type : String
     },
   },
@@ -81,7 +81,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 
 // Generate Access Token
 userSchema.methods.generateAccessToken = function () {
-  jwt.sign(
+  return jwt.sign(
     // payload
     {
       id: this._id,
@@ -92,13 +92,13 @@ userSchema.methods.generateAccessToken = function () {
     process.env.ACCESS_TOKEN_SECRET,
     // options
     {
-      expireIn: process.env.ACCESS_TOKEN_EXPIRE,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRE,
     }
   );
 };
 
-userSchema.method.generateRefreshToken = function () {
-  jwt.sign(
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
     // payload
     {
       id: this._id,
@@ -107,7 +107,7 @@ userSchema.method.generateRefreshToken = function () {
     process.env.REFRESH_TOKEN_SECRET,
     // options
     {
-      expireIn: process.env.REFRESH_TOKEN_EXPIRE,
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRE,
     }
   );
 }

@@ -5,6 +5,24 @@ import { uploadResult } from "../service/cloudinaryFileUpload.js";
 import { ApiResponse } from "../utility/ApiResponse.js";
 
 
+const generateAccessAndRefreshToken = async (user) => {
+  console.log("User in generateAccessAndRefreshToken ", user)
+  try {
+    
+    const accessToken = await user.generateAccessToken();
+    
+    const refreshToken = await user.generateRefreshToken();
+    
+    user.refreshToken = refreshToken;
+    await user.save({validateBeforeSave : false})
+
+    return {accessToken, refreshToken}
+  } catch (error) {
+    console.error("TOKEN GENERATION ERROR:", error);
+    throw new AppError("Something went wrong while generating access and refresh Token", 500)
+  }
+}
+
 const registerUser = asyncHandler(async (req, res) => {
   const { username, fullname, email, password } = req.body;
 
@@ -21,12 +39,11 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
 
-  // Check user already exist or not
+  // Check user already exist or not. It return null if user not found otherwise return {}
   const isUserExist = await User.findOne(
     { $or: [ { username }, { email } ] }
   )
 
-  
 
   if(isUserExist){
     throw new AppError("User with email or username already exist", 409)
@@ -68,7 +85,7 @@ const registerUser = asyncHandler(async (req, res) => {
         username : username.toLowerCase()
     })
 
-    const createdUser = await User.findById(user._id).select("-password -refereshToken")
+    const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
     if(!createdUser){
         throw new AppError("Something went wrong while registring the user.", 500)
@@ -82,4 +99,64 @@ const registerUser = asyncHandler(async (req, res) => {
 
 });
 
-export { registerUser };
+const login = asyncHandler(async (req,res) => {
+  // Get user info
+  const {username, email, password} = req.body;
+
+
+  // check username and email are provided or not
+  if(!username && !email){
+    throw new AppError("Please provide email or username", 400);
+  }
+
+  // check user exist or not basis of username or email and it return userObj
+  const existedUser = await User.findOne({
+    $or : [{username}, {email}]
+  })
+
+  console.log("value of existedUser ",existedUser)
+  if(!existedUser){
+    throw new AppError("User not found",404);
+  }
+
+  const userPassword = await existedUser.comparePassword(password);
+
+  console.log("userPassword ",userPassword); // true or false
+  if(!userPassword){
+    throw new AppError("Password incorrect",401);
+  }
+
+  // Generate Access and Refresh tocken
+  const {accessToken, refreshToken} = await generateAccessAndRefreshToken(existedUser);
+  
+
+ // Fetch the logged-in user's latest details from the database, excluding sensitive fields like password and refreshToken before sending the user data in the API response.
+ //  Kyunki login ke beech mein humne user ka refreshToken database mein update kiya tha:
+  const loggedInUser = await User.findById(existedUser._id)
+  .select("-password -refreshToken");
+
+  // Deside user ko kon kon c information send krni hai
+  // cookie by-default frontend pr koi bhi modify kr skta hai but httpOnly true and secure true se ab ye sirf server pr hi modify ho skti hai.
+  const options = {
+    httpOnly : true,
+    secure : true
+  }
+
+  // Return response
+  res.status(200)
+  .cookie("accessToken", accessToken, options)
+  .cookie("refreshToken",refreshToken).json(
+    new ApiResponse(200,
+      {
+        user : loggedInUser, accessToken, refreshToken
+      },
+      "User logged in successfully"
+    )
+  )
+
+})
+
+export { 
+  registerUser,
+  login
+ };
