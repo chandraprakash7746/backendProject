@@ -129,10 +129,11 @@ const login = asyncHandler(async (req,res) => {
   // Generate Access and Refresh tocken
   const {accessToken, refreshToken} = await generateAccessAndRefreshToken(existedUser);
   
-
+ console.log("Access Token in login controller function ",accessToken)
+ console.log("Refresh Token in login controller function ",refreshToken)
  // Fetch the logged-in user's latest details from the database, excluding sensitive fields like password and refreshToken before sending the user data in the API response.
  //  Kyunki login ke beech mein humne user ka refreshToken database mein update kiya tha:
-  const loggedInUser = await User.findById(existedUser._id)
+  const loggedInUser = await User.findById(existedUser.id)
   .select("-password -refreshToken");
 
   // Deside user ko kon kon c information send krni hai
@@ -140,7 +141,7 @@ const login = asyncHandler(async (req,res) => {
   const options = {
     httpOnly : true,
     secure : true
-  }
+  } 
 
   // Return response
   res.status(200)
@@ -156,7 +157,38 @@ const login = asyncHandler(async (req,res) => {
 
 })
 
+const logout = asyncHandler(async(req, res) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $unset: {
+                refreshToken: 1 // this removes the field from document
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"))
+})
+
+
+
 export { 
   registerUser,
-  login
+  login,
+  logout,
  };
+
+
+ 

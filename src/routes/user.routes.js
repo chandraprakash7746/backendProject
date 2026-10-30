@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { login, registerUser } from "../controllers/user.controller.js";
+import { login, logout, registerUser } from "../controllers/user.controller.js";
 import { upload } from "../middleware/multer.middleware.js";
+import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const userRouter = Router();
 
@@ -20,5 +21,6 @@ userRouter.route("/register").post(
 // above line ko me kuch is trhe se bhi likh skta hun
 // userRouter.post("/register", signup) as good as userRouter.route("/register").post(registerUser);
 
-userRouter.route("/login").post(login)
+userRouter.route("/login").post(login);
+userRouter.route("/logout").post(verifyJWT, logout)
 export default userRouter;
