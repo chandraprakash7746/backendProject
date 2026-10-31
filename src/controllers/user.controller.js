@@ -3,10 +3,11 @@ import { AppError } from "../utility/AppError.js";
 import { User } from "../models/users.model.js";
 import { uploadResult } from "../service/cloudinaryFileUpload.js";
 import { ApiResponse } from "../utility/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 
 const generateAccessAndRefreshToken = async (user) => {
-  console.log("User in generateAccessAndRefreshToken ", user)
+  // console.log("User in generateAccessAndRefreshToken ", user)
   try {
     
     const accessToken = await user.generateAccessToken();
@@ -182,12 +183,57 @@ const logout = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
+// refresh, access token endPoint
+const refreshAccessToken = asyncHandler( async (req, res) => {
+  console.log("Hello from refreshAccessToken");
+  // get refreshToken
+  const incommingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+  if(!incommingRefreshToken){
+    throw new AppError(401,"Unauthorized request")
+  }
+
+  // Verify refresh token
+  const decodedToken =  jwt.verify(incommingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+  // Find user by tocken's paylod
+  // console.log("Decoded token ",decodedToken)
+  const user = await User.findById(decodedToken.id);
+  if(!user){
+    throw new AppError("Invalid refresh token", 401);
+  }
+
+  // Compare DB token and incommingRefreshToken
+  if(incommingRefreshToken !== user.refreshToken){
+    throw new AppError("Refresh token mismatch", 402)
+  }
+
+  // Generate new tokens
+  const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user);
+
+  // Send new Tokens in res
+  const options = {
+    httpOnly : true,
+    secure : true
+  }
+
+  return res.status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json({
+              success : true,
+              message : "Access token refreshed successfully"
+            });
+
+});
+
 
 
 export { 
   registerUser,
   login,
   logout,
+  refreshAccessToken,
  };
 
 

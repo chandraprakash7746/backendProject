@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, logout, registerUser } from "../controllers/user.controller.js";
+import { login, logout, refreshAccessToken, registerUser } from "../controllers/user.controller.js";
 import { upload } from "../middleware/multer.middleware.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
@@ -22,5 +22,6 @@ userRouter.route("/register").post(
 // userRouter.post("/register", signup) as good as userRouter.route("/register").post(registerUser);
 
 userRouter.route("/login").post(login);
-userRouter.route("/logout").post(verifyJWT, logout)
+userRouter.route("/logout").post(verifyJWT, logout);
+userRouter.route("/refresh-token").post(refreshAccessToken);
 export default userRouter;
