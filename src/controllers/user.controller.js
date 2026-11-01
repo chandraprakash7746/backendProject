@@ -228,12 +228,42 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
 });
 
 
+// Change user current Password
+const chnageCurrentPassword = asyncHandler( async (req, res) => {
+  // Get passwords from user
+  const {oldPassword, newPassword} = req.body;
+
+  if(!(oldPassword && newPassword)){
+    throw new AppError("Please provide password", 400)
+  }
+
+  // const user = req.user;
+  // is user ke pass password and refToken nahi hota. Yea incomplete object hota hai jisme
+  // id and ek do information bus hoti hai isliyea hme dobara se user find krna padta hai
+  const user = await User.findById(user._id)
+
+  const isPasswordCorrect = user.comparePassword(oldPassword)
+  
+  if(isPasswordCorrect){
+    throw new AppError("Password incorrect", 400)
+  }
+
+  user.password = newPassword;
+
+  await user.safe({validateBeforeSave : false})
+
+  return res.status(200).json(new ApiResponse(200, {}, "Password change successfully."))
+
+})
+
+
 
 export { 
   registerUser,
   login,
   logout,
   refreshAccessToken,
+  chnageCurrentPassword
  };
 
 
