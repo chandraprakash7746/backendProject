@@ -263,6 +263,70 @@ const getCurrentUser = asyncHandler( async (req, res) => {
 })
 
 
+const getUserChannelProfile = asyncHandler( async (req, res) => {
+  const {username} = req.parems;
+
+  if(!username) {
+    throw new AppError("User is missing", 400)
+  }
+
+  // find user in user controller
+  await User.aggregate([
+    {
+      $match : {
+        username : username?.toLowerCase,
+      }
+    },
+    { // this is for finding subscriber
+      $lookup : {
+        from : "subscribers",
+        localField : "_id",
+        foreignField : "channel",
+        as : "subscribers"
+      }
+    },
+    { // this is for - user kin channels ko subscribe kiyea hai
+      $lookup : {
+        from : "subscribers",
+        localField : "_id",
+        foreignField : "subscriber",
+        as : "subscribersTo"
+      }
+    },
+    {
+      $addFields : {
+        subscribersCount : {
+          $size : "$subscriber"
+        },
+        channelsSubscribedToCount : {
+          $size : "$subscribersTo"
+        },
+        isSubscribed: {
+                    $cond: {
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+      }
+    },
+    {
+       $project: {
+                fullname: 1,
+                username: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+
+            }
+    },
+  ])
+})
+
+
 
 export { 
   registerUser,
@@ -270,7 +334,8 @@ export {
   logout,
   refreshAccessToken,
   chnageCurrentPassword,
-  getCurrentUser
+  getCurrentUser,
+  getUserChannelProfile
  };
 
 
